@@ -3,10 +3,11 @@ import mysql from 'mysql';
 import { AddressInfo } from 'net';
 import bodyParser from 'body-parser';
 import cors from 'cors'
-import { Todo } from "./model/Todo";
-import {　TodoRepositolyImpl　} from "./repositoly/impl/TodoRepositolyImpl";
+import {　TodoRepositoryImpl　} from "./repository/impl/TodoRepositoryImpl";
+import { TodoServiceImpl} from "./service/impl/TodoServiceImpl"
 
 const app = express();
+
 
 //#region expressでWebサーバーの設定
 
@@ -55,27 +56,28 @@ connection.connect((err) => {
 
 //#endregion
 
-const todoRepositoly = new TodoRepositolyImpl(connection);
+const todoRepository = new TodoRepositoryImpl(connection);
+const TodoService = new TodoServiceImpl(todoRepository);
 
 //#region APIのエンドポイント(APIに接続するためのURL)を設定
 
 // todoすべてを取得する　　　　　↓ 型をちゃんと指定する必要がある
 app.get("/api/todos", async (req: Request, res: Response, next: NextFunction) => {
-    const todos = await todoRepositoly.getAll();
+    const todos = await TodoService.getAll();
     res.json(todos);
 });
 
 // todo1件を取得する
 app.get("/api/todos/:id", async (req: Request, res: Response, next: NextFunction) => {
   const id = parseInt(req.params.id);
-  const todo = await todoRepositoly.get(id);
+  const todo = await TodoService.get(id);
   res.json(todo);
 });
 
 // todo1件を作成する
 app.post("/api/todos", async (req: Request, res: Response, next: NextFunction) => {
   const todo = req.body;
-  const result = await todoRepositoly.create(todo);
+  const result = await TodoService.create(todo);
   res.status(201).json(result);
   
 });
@@ -85,7 +87,7 @@ app.put("/api/todos/:id", async (req: Request, res: Response, next: NextFunction
   const id = parseInt(req.params.id);
   const todo = req.body;
   const sql = 'update todos set ? where ?';
-  await todoRepositoly.update(id, todo)
+  await TodoService.update(id, todo)
   res.status(200).send();
   
 });
@@ -93,7 +95,7 @@ app.put("/api/todos/:id", async (req: Request, res: Response, next: NextFunction
 // todo1件を削除する
 app.delete("/api/todos/:id", async (req: Request, res: Response, next: NextFunction) => {
   const id = parseInt(req.params.id);
-  await todoRepositoly.delete(id);
+  await TodoService.delete(id);
     res.status(204).send();
 });
 

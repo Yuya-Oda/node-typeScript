@@ -1,9 +1,9 @@
 import { Todo } from "../../model/Todo";
-import{ TodoRepositoly } from "../TodoRepository";
+import{ TodoRepository } from "../TodoRepository";
 import mysql, { Connection } from "mysql";
 import { rejects } from "assert";
 
-export class TodoRepositolyImpl implements TodoRepositoly{
+export class TodoRepositoryImpl implements TodoRepository{
     private connection: Connection;
 
     constructor(connection: Connection){
