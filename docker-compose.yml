@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  mysql: # Mysql container
+    container_name: mysql
+    image: mysql:5.7
+    restart: always
+    volumes:
+      - ./docker/my.cnf:/etc/mysql/my.cnf
+      - ./docker/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootPassword
+      MYSQL_DATABASE: sample_database
+      MYSQL_USER:     user
+      MYSQL_PASSWORD: password
+      TZ: Asia/Tokyo
+    ports:
+      - 3306:3306
+  
+  pma: # phpMyAdmin container
+    container_name: pma
+    image: phpmyadmin/phpmyadmin:latest
+    restart: always
+    environment:
+      PMA_USER: root
+      PMA_PASSWORD: rootPassword
+    ports:
+      - 8080:80
+    links:
+      - mysql:db

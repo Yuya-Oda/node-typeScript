@@ -1,0 +1,100 @@
+import express, { Request, Response, NextFunction } from 'express';
+import mysql from 'mysql';
+import { AddressInfo } from 'net';
+import bodyParser from 'body-parser';
+import cors from 'cors'
+import { Todo } from "./model/Todo";
+import {　TodoRepositolyImpl　} from "./repositoly/impl/TodoRepositolyImpl";
+
+const app = express();
+
+//#region expressでWebサーバーの設定
+
+// expressで4000ポートにサーバー起動
+const server = app.listen(4000, () => {
+  const address = server.address() as AddressInfo; // ← as 型名でその型のみ受け付ける
+  console.log("Node.js is listening to PORT:" + address.port);
+});
+
+// expressの設定 (cors method header 許可の設定)
+app.disable('x-powered-by');
+app.use(cors()).use(bodyParser.json());
+
+// cors を使用せず手動で設定すると以下のような感じになる
+// app.use((req: Request, res: Response, next:NextFunction ) => {
+//   res.header('Access-Control-Allow-Origin', '*');
+//   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+//   res.header(
+//     'Access-Control-Allow-Headers',
+//     'Content-Type, Authorization, access_token'
+//   );
+
+//   if ('OPTIONS' === req.method) {
+//     res.send(200);
+//   } else {
+//     next();
+//   }
+// });
+
+//#endregion
+
+//#region mysqlに接続
+//                     ↓ 型が固定されている場合は省略可
+const connection = mysql.createConnection({
+  host: '',
+  port: 3306,
+  user: 'user',
+  password: 'password',
+  database: 'sample_database',
+});
+
+connection.connect((err) => {
+  if (err) throw err;
+  console.log('connected mysql');
+});
+
+//#endregion
+
+const todoRepositoly = new TodoRepositolyImpl(connection);
+
+//#region APIのエンドポイント(APIに接続するためのURL)を設定
+
+// todoすべてを取得する　　　　　↓ 型をちゃんと指定する必要がある
+app.get("/api/todos", async (req: Request, res: Response, next: NextFunction) => {
+    const todos = await todoRepositoly.getAll();
+    res.json(todos);
+});
+
+// todo1件を取得する
+app.get("/api/todos/:id", async (req: Request, res: Response, next: NextFunction) => {
+  const id = parseInt(req.params.id);
+  const todo = await todoRepositoly.get(id);
+  res.json(todo);
+});
+
+// todo1件を作成する
+app.post("/api/todos", async (req: Request, res: Response, next: NextFunction) => {
+  const todo = req.body;
+  const result = await todoRepositoly.create(todo);
+  res.status(201).json(result);
+  
+});
+
+// todo1件を更新する
+app.put("/api/todos/:id", async (req: Request, res: Response, next: NextFunction) => {
+  const id = parseInt(req.params.id);
+  const todo = req.body;
+  const sql = 'update todos set ? where ?';
+  await todoRepositoly.update(id, todo)
+  res.status(200).send();
+  
+});
+
+// todo1件を削除する
+app.delete("/api/todos/:id", async (req: Request, res: Response, next: NextFunction) => {
+  const id = parseInt(req.params.id);
+  await todoRepositoly.delete(id);
+    res.status(204).send();
+});
+
+//#endregion
